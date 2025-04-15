@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  wallet-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=jdbc:postgresql://localhost:5434/wallet_db
+      - DB_USER=root
+      - DB_PASSWORD=root
+    depends_on:
+      wallet-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  wallet-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=${DB_USER:-root}
+        - POSTGRES_PASSWORD=${DB_PASSWORD:-root}
+        - POSTGRES_DB=${DB_NAME:-wallet_db}
+    ports:
+      - "5434:5432"
+    volumes:
+      - wallet-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wallet_user -d wallet_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  wallet-db-data:
