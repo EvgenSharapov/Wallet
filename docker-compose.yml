@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   wallet-service:
@@ -6,11 +6,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     environment:
-      - DB_URL=jdbc:postgresql://localhost:5434/wallet_db
-      - DB_USER=root
-      - DB_PASSWORD=root
+       SPRING_DATASOURCE_URL: jdbc:postgresql://wallet-db:5432/${DB_NAME:-wallet_db}
+       SPRING_DATASOURCE_USERNAME: ${DB_USER:-root}
+       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
+
+#      - SPRING_JPA_HIBERNATE_DDL_AUTO=${DDL_AUTO:-validate}
+#      - SPRING_CACHE_TYPE=${CACHE_TYPE:-caffeine}
     depends_on:
       wallet-db:
         condition: service_healthy
@@ -19,22 +22,24 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    restart: unless-stopped
 
   wallet-db:
     image: postgres:15-alpine
     environment:
       - POSTGRES_USER=${DB_USER:-root}
-        - POSTGRES_PASSWORD=${DB_PASSWORD:-root}
-        - POSTGRES_DB=${DB_NAME:-wallet_db}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-root}
+      - POSTGRES_DB=${DB_NAME:-wallet_db}
     ports:
-      - "5434:5432"
+      - "${DB_PORT:-5434}:5432"
     volumes:
       - wallet-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wallet_user -d wallet_db"]
+      test: ["CMD-SHELL", "pg_isready -U root -d wallet_db"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
 volumes:
   wallet-db-data:

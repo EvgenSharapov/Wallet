@@ -48,17 +48,27 @@ public class WalletService {
         }
     }
 
+    @Cacheable(value = "wallets", key = "#walletId")
+    @Transactional(readOnly = true)
+    public WalletResponse getBalance(UUID walletId) {
+        BigDecimal balance = walletRepository.findBalanceById(walletId)
+                .orElseThrow(() -> new WalletNotFoundException("Кошелёк не найден: " + walletId));
+
+        return new WalletResponse(walletId, balance);
+    }
+
     private WalletResponse processDeposit(UUID walletId, BigDecimal amount) {
+        walletRepository.createWalletIfNotExists(walletId, amount);
+
         int updated = walletRepository.updateBalance(walletId, amount);
 
         if (updated == 0) {
-            return createNewWallet(walletId, amount);
+            throw new IllegalStateException("Не удалось обновить баланс после создания кошелька");
         }
 
         BigDecimal newBalance = walletRepository.findBalanceById(walletId)
-                .orElseThrow(() -> new IllegalStateException("Баланс кошелька не найден после внесения депозита"));
+                .orElseThrow(() -> new IllegalStateException("Баланс не найден"));
 
-        log.debug("Внесено {} на кошелек {}. Новый баланс: {}", amount, walletId, newBalance);
         return new WalletResponse(walletId, newBalance);
     }
 
@@ -76,20 +86,6 @@ public class WalletService {
         return new WalletResponse(walletId, newBalance);
     }
 
-    private WalletResponse createNewWallet(UUID walletId, BigDecimal amount) {
-        Wallet newWallet = Wallet.builder()
-                .id(walletId)
-                .balance(amount)
-                .version(0L)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-
-        walletRepository.save(newWallet);
-        log.info("Создан новый кошелек: {}", walletId);
-        return new WalletResponse(walletId, amount);
-    }
-
     private void handleWithdrawalFailure(UUID walletId, BigDecimal amount) {
         if (!walletRepository.existsById(walletId)) {
             throw new WalletNotFoundException("Кошелёк не найден: " + walletId);
@@ -101,14 +97,5 @@ public class WalletService {
         throw new InsufficientFundsException(String.format(
                 "Недостаточно средств. Текущий баланс: %s, запрашиваемый: %s",
                 currentBalance, amount));
-    }
-
-    @Cacheable(value = "wallets", key = "#walletId")
-    @Transactional(readOnly = true)
-    public WalletResponse getBalance(UUID walletId) {
-        BigDecimal balance = walletRepository.findBalanceById(walletId)
-                .orElseThrow(() -> new WalletNotFoundException("Кошелёк не найден: " + walletId));
-
-        return new WalletResponse(walletId, balance);
     }
 }

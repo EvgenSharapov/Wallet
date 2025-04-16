@@ -2,12 +2,9 @@ package org.example.wallet.repository;
 
 import org.example.wallet.model.Wallet;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import jakarta.persistence.LockModeType;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -26,7 +23,9 @@ public interface WalletRepository extends JpaRepository<Wallet, UUID> {
     @Query("SELECT w.balance FROM Wallet w WHERE w.id = :id")
     Optional<BigDecimal> findBalanceById(@Param("id") UUID id);
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT w FROM Wallet w WHERE w.id = :id")
-    Optional<Wallet> findByIdForUpdate(@Param("id") UUID id);
+    @Modifying
+    @Query(value = "INSERT INTO wallets (id, balance, version, created_at, updated_at) " +
+            "VALUES (:id, 0, 0, NOW(), NOW()) " +
+            "ON CONFLICT (id) DO NOTHING", nativeQuery = true)
+    void createWalletIfNotExists(@Param("id") UUID id, @Param("amount") BigDecimal amount);
 }
