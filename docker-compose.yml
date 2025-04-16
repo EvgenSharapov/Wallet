@@ -11,9 +11,8 @@ services:
        SPRING_DATASOURCE_URL: jdbc:postgresql://wallet-db:5432/${DB_NAME:-wallet_db}
        SPRING_DATASOURCE_USERNAME: ${DB_USER:-root}
        SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-root}
-
-#      - SPRING_JPA_HIBERNATE_DDL_AUTO=${DDL_AUTO:-validate}
-#      - SPRING_CACHE_TYPE=${CACHE_TYPE:-caffeine}
+       SPRING_JPA_HIBERNATE_DDL_AUTO: ${DDL_AUTO:-validate}
+       SPRING_CACHE_TYPE: ${CACHE_TYPE:-caffeine}
     depends_on:
       wallet-db:
         condition: service_healthy

@@ -8,7 +8,7 @@ ENV SPRING_DATASOURCE_USERNAME=root
 ENV SPRING_DATASOURCE_PASSWORD=root
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-war", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
 
 
 #FROM eclipse-temurin:17-jdk-jammy
