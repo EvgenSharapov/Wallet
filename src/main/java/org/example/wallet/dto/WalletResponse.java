@@ -13,4 +13,8 @@ import java.util.UUID;
 public class WalletResponse {
     private UUID walletId;
     private BigDecimal balance;
+
+    public BigDecimal balance() {
+        return this.balance;
+    }
 }

@@ -11,21 +11,31 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface WalletRepository extends JpaRepository<Wallet, UUID> {
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("UPDATE Wallet w SET w.balance = w.balance + :amount WHERE w.id = :id")
-    int updateBalance(@Param("id") UUID id, @Param("amount") BigDecimal amount);
-
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("UPDATE Wallet w SET w.balance = w.balance - :amount " +
-            "WHERE w.id = :id AND w.balance >= :amount")
-    int withdrawWithCheck(@Param("id") UUID id, @Param("amount") BigDecimal amount);
-
-    @Query("SELECT w.balance FROM Wallet w WHERE w.id = :id")
-    Optional<BigDecimal> findBalanceById(@Param("id") UUID id);
+    @Query(nativeQuery = true, value = """
+        WITH inserted AS (
+            INSERT INTO wallets (id, balance, version, created_at, updated_at)
+            VALUES (:id, 0, 1, NOW(), NOW())
+            ON CONFLICT (id) DO NOTHING
+            RETURNING id
+        )
+        UPDATE wallets
+        SET balance = balance + :amount,
+            version = version + 1,
+            updated_at = NOW()
+        WHERE id = :id
+        RETURNING balance""")
+    Optional<BigDecimal> depositAmount(@Param("id") UUID id,
+                                       @Param("amount") BigDecimal amount);
 
     @Modifying
-    @Query(value = "INSERT INTO wallets (id, balance, version, created_at, updated_at) " +
-            "VALUES (:id, 0, 0, NOW(), NOW()) " +
-            "ON CONFLICT (id) DO NOTHING", nativeQuery = true)
-    void createWalletIfNotExists(@Param("id") UUID id, @Param("amount") BigDecimal amount);
+    @Query(nativeQuery = true, value = """
+    UPDATE wallets 
+    SET balance = balance - :amount,
+        version = version + 1
+    WHERE id = :id AND balance >= :amount""")
+    int withdrawAmount(@Param("id") UUID id,
+                       @Param("amount") BigDecimal amount);
+
+    @Query("SELECT balance FROM Wallet WHERE id = :id")
+    Optional<BigDecimal> findBalanceById(@Param("id") UUID id);
 }

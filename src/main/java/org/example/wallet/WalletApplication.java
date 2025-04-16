@@ -7,7 +7,6 @@ import org.springframework.retry.annotation.EnableRetry;
 
 @SpringBootApplication
 @EnableRetry
-@EnableCaching
 public class WalletApplication {
 
     public static void main(String[] args) {

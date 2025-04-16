@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -27,11 +28,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    @ExceptionHandler({InsufficientFundsException.class})
-    public ResponseEntity<Map<String, String>> handleInsufficientFunds(InsufficientFundsException ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<Map<String, String>> handleInsufficientFunds(
+            InsufficientFundsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class})
@@ -83,6 +85,15 @@ public class GlobalExceptionHandler {
         error.put("message", "Неверный формат запроса");
         return ResponseEntity.badRequest().body(error);
     }
+
+//    @ExceptionHandler(InsufficientFundsException.class)
+//    public ResponseEntity<ErrorResponse> handleInsufficientFunds(InsufficientFundsException ex) {
+//        log.warn("Отклонён запрос: {}", ex.getMessage());
+//
+//        return ResponseEntity
+//                .status(HttpStatus.BAD_REQUEST)
+//                .body(new ErrorResponse(ex.getMessage()));
+//    }
 
 }
 

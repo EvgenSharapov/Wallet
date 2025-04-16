@@ -5,8 +5,14 @@ package org.example.wallet.exceptions;
  * когда на счету недостаточно денег
  */
 public class InsufficientFundsException extends RuntimeException {
-    public InsufficientFundsException(String message) {
+    private final boolean logStackTrace;
+
+    public InsufficientFundsException(String message, boolean logStackTrace) {
         super(message);
+        this.logStackTrace = logStackTrace;
     }
 
+    public boolean shouldLogStackTrace() {
+        return logStackTrace;
+    }
 }
